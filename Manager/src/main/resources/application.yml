@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  #  tomcat:
+  #    uri-encoding: utf-8
+  servlet:
+    encoding:
+      force: true
+      charset: utf-8
+#      enabled: true
+
+spring:
+  mvc:
+    servlet:
+      load-on-startup: 10
+    log-request-details: true
+
+  profiles:
+    active: dev
+    group:
+      "dev": mysql, redis
+
+logging:
+  level:
+    web: debug
