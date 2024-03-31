@@ -1,0 +1,11 @@
+rocketmq:
+  name-server: localhost:9876
+  im-message-topic: im-message-topic
+  user-message-topic: user-message-topic
+  group-message-topic: group-message-topic
+  producer:
+    group: im-message-producer-group
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 3
+    max-message-size: 256
+

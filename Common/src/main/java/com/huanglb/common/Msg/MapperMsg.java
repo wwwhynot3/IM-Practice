@@ -2,6 +2,7 @@ package com.huanglb.common.Msg;
 
 public class MapperMsg extends Msg {
     public static final MapperMsg QUERY_SUCCESS = new MapperMsg(200, "查询成功");
+    public static final MapperMsg QUERY_FAILURE = new MapperMsg(400, "查询失败");
     public static final MapperMsg INVALID_LOGIN = new MapperMsg(400, "用户名或密码错误");
     public static final MapperMsg SUCCESSFUL_LOGIN = new MapperMsg(200, "登陆成功");
     public static final MapperMsg MODIFY_SUCCESS = new MapperMsg(200, "修改成功");

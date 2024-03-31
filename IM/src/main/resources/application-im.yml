@@ -1,0 +1,5 @@
+im:
+  message-pull-limit: 40
+  id-generator:
+    data-center-id: 0
+    machine-id: 0

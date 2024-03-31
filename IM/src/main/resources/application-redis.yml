@@ -8,7 +8,8 @@ spring:
       client-type: lettuce
       lettuce:
         pool:
-          max-active: 200
-          max-wait: -1ms
-          max-idle: 10
+          max-active: 18 # cpu cores * 2 + 2
+          max-wait: 5s
+          max-idle: 16 #  cpu * 2
           min-idle: 0
+          time-between-eviction-runs: 1s
