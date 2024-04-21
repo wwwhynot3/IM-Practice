@@ -16,7 +16,6 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -32,10 +31,8 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
-        Method method = handlerMethod.getMethod();
-        if (method.getAnnotation(AuthorizationAuthenticator.class) != null
-                || handlerMethod.getBeanType().getAnnotation(AuthorizationAuthenticator.class) != null) {
-            log.info("AuthorizationInterceptor preHandle");
+        // 获取方法上的注解
+        if (handlerMethod.getMethod().isAnnotationPresent(AuthorizationAuthenticator.class)) {
             String token = null;
             Cookie[] cookies = request.getCookies();
             if (cookies == null) {
@@ -44,7 +41,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                     response.getWriter().write(jsonUtil.object2Json(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "没有权限,请检查是否已登录")));
                     //response.getWriter().write(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "没有权限,请检查是否已登录").toString());
                 } catch (IOException e) {
-                    log.error(e.getMessage(), e);
+                    log.info(e.getMessage(), e);
                 }
                 return false;
             }
@@ -60,23 +57,24 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                     response.getWriter().write(jsonUtil.object2Json(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "没有权限,请检查是否已登录")));
                     //response.getWriter().write(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "没有权限,请检查是否已登录").toString());
                 } catch (IOException e) {
-                    log.error(e.getMessage(), e);
+                    log.info(e.getMessage(), e);
                 }
                 return false;
             }
-            log.info("get token: {} from URL {}", token, request.getRequestURL());
+
             Long userId = authTokenPool.validateToken(token);
             if (userId == null) {
                 response.setStatus(HttpServletResponse.SC_ACCEPTED);
                 try {
-                    log.info("Invalid Token");
+                    log.info("Invalid :{}", token);
                     response.getWriter().write(jsonUtil.object2Json(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "Token不正确")));
                     response.getWriter().write(new ResponseData<>(UnauthorizedMsg.UNAUTHORIZED, "Token不正确").toString());
                 } catch (IOException e) {
-                    log.error(e.getMessage(), e);
+                    log.info(e.getMessage(), e);
                 }
                 return false;
             }
+            log.info("get token: {} from URL {}: User:{}", token, request.getRequestURL(), userId);
             request.setAttribute(AUTHORIZED_USER_ID, userId);
             return true;
         }

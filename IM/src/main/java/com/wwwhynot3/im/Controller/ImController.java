@@ -1,6 +1,7 @@
 package com.wwwhynot3.im.Controller;
 
 import com.huanglb.common.Authorization.AuthorizationAuthenticator;
+import com.huanglb.common.JsonUtil;
 import com.huanglb.common.Mongodb.Entity.GroupMessage;
 import com.huanglb.common.Mongodb.Entity.UserMessage;
 import com.huanglb.common.Mongodb.Service.ImMessageService;
@@ -9,6 +10,7 @@ import com.huanglb.common.Msg.MqMsg;
 import com.huanglb.common.ResponseData;
 import com.huanglb.common.SnowFlakeIdGenerator;
 import com.huanglb.common.TimeCache;
+import com.wwwhynot3.im.SseEmitter.ImMessageEmitter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
@@ -17,20 +19,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
-@RestController("/im")
+@RestController
+@RequestMapping("/im")
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ImController {
 
     /**
      * 两分钟内可以撤回
      */
-    private static final long TIME_LIMIT = 2 * 60 * 1000L;
+
     private final ImMessageService imMessageService;
     private final SnowFlakeIdGenerator snowFlakeIdGenerator;
     private final RocketMQTemplate rocketMQTemplate;
+    private final ImMessageEmitter imMessageEmitter;
+    private final JsonUtil jsonUtil;
+    @Value("${im.withdraw-timeout}")
+    private long WITHDRAW_TIME_LIMIT;
     @Value("${rocketmq.user-message-topic}")
     private String USER_MESSAGE_TOPIC;
     @Value("${rocketmq.group-message-topic}")
@@ -45,6 +53,7 @@ public class ImController {
     public ResponseData<List<UserMessage>> getUserMessage(@RequestAttribute("userId") Long userId,
                                                           @RequestParam("destUserId") Long destUserId,
                                                           @RequestParam("committedMessageId") ObjectId committedMessageId) {
+        log.info("userId:{}, destUserId:{}, committedMessageId: {}", userId, destUserId, committedMessageId);
         List<UserMessage> userMessageSince = imMessageService.getUserMessageSince(userId, destUserId, committedMessageId, IM_LIMIT);
         return userMessageSince == null
                 ? ResponseData.build(MapperMsg.QUERY_FAILURE, null)
@@ -65,11 +74,13 @@ public class ImController {
     @PostMapping("/user")
     @AuthorizationAuthenticator
     public ResponseData<UserMessage> sendMessageReceive(@RequestAttribute("userId") Long userId,
-                                                        @RequestBody UserMessage userMessage) {
+                                                        @RequestBody UserMessage userMessage) throws IOException {
         userMessage.setMessageId(null);
         userMessage.setTimestamp(TimeCache.getCurrentTimeStamp());
-        return ResponseData.build(MqMsg.SEND_SUCCESS,
-                rocketMQTemplate.sendAndReceive(this.USER_MESSAGE_TOPIC, userMessage, UserMessage.class));
+        log.info("userMessage: {}", userMessage);
+        userMessage = rocketMQTemplate.sendAndReceive(this.USER_MESSAGE_TOPIC, userMessage, UserMessage.class);
+        imMessageEmitter.pushMessage(userMessage.getDestUserId(), userMessage);
+        return ResponseData.build(MqMsg.SEND_SUCCESS, userMessage);
     }
 
     @PostMapping("/group")
@@ -95,7 +106,7 @@ public class ImController {
     public ResponseData<String> withdrawUserMessage(@RequestAttribute("userId") Long userId,
                                                     @RequestParam("destUserId") Long destUserId,
                                                     @RequestParam("messageId") ObjectId messageId) {
-        return imMessageService.withdrawUserMessageTimed(userId, destUserId, messageId, TimeCache.getCurrentTimeStamp(), TIME_LIMIT)
+        return imMessageService.withdrawUserMessageTimed(userId, destUserId, messageId, TimeCache.getCurrentTimeStamp(), WITHDRAW_TIME_LIMIT)
                 ? ResponseData.build(MapperMsg.DELETE_SUCCESS, "撤回成功")
                 : ResponseData.build(MapperMsg.DELETE_FAILURE, "撤回失败");
     }
@@ -105,7 +116,7 @@ public class ImController {
     public ResponseData<String> withdrawGroupMessage(@RequestAttribute("userId") Long userId,
                                                      @RequestParam("destGroupId") Long destGroupId,
                                                      @RequestParam("messageId") ObjectId messageId) {
-        return imMessageService.withdrawGroupMessageTimed(destGroupId, messageId, TimeCache.getCurrentTimeStamp(), TIME_LIMIT)
+        return imMessageService.withdrawGroupMessageTimed(destGroupId, messageId, TimeCache.getCurrentTimeStamp(), WITHDRAW_TIME_LIMIT)
                 ? ResponseData.build(MapperMsg.DELETE_SUCCESS, "撤回成功")
                 : ResponseData.build(MapperMsg.DELETE_FAILURE, "撤回失败");
     }

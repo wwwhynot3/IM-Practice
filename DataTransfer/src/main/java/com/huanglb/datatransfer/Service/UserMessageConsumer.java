@@ -15,12 +15,13 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-@RocketMQMessageListener(topic = "${rocketmq.im-message-topic}", consumerGroup = "${rocketmq.consumer.user-message-group}")
+@RocketMQMessageListener(topic = "${rocketmq.user-message-topic}", consumerGroup = "${rocketmq.consumer.user-message-group}")
 public class UserMessageConsumer implements RocketMQReplyListener<UserMessage, UserMessage> {
     private final ImMessageService imMessageService;
 
     @Override
     public UserMessage onMessage(UserMessage userMessage) {
+        log.info("receive user-message:{}", userMessage);
         imMessageService.saveUserMessage(userMessage);
         log.info("receive user-message:{}", userMessage);
         return userMessage;

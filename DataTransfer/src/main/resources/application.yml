@@ -21,4 +21,4 @@ spring:
 
 logging:
   level:
-    web: debug
+    web: info

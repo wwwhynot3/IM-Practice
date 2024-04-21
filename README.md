@@ -6,6 +6,8 @@ nobody's IM practice project
 
 ## Current Project Structure
 
+**Trying to use sse to push messages**
+
 目前使用短轮询实现实时聊天，考虑使用SSE
 
 用户消息和群消息按照用户和群的ID，每个会话按照两个用户或者群的ID生成表名，存储至MongoDB

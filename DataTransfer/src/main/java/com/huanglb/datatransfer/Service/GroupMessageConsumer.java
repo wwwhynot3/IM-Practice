@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-@RocketMQMessageListener(topic = "${rocketmq.im-message-topic}", consumerGroup = "${rocketmq.consumer.group-message-group}")
+@RocketMQMessageListener(topic = "${rocketmq.group-message-topic}", consumerGroup = "${rocketmq.consumer.group-message-group}")
 public class GroupMessageConsumer implements RocketMQReplyListener<GroupMessage, GroupMessage> {
     private final ImMessageService imMessageService;
 

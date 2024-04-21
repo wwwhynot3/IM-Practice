@@ -1,5 +1,7 @@
 im:
+  sse-timeout: 0 #0表示永久
   message-pull-limit: 40
+  withdraw-timeout: 120000 #两分钟内可以撤回
   id-generator:
     data-center-id: 0
     machine-id: 0

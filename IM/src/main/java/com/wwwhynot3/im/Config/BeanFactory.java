@@ -45,7 +45,7 @@ public class BeanFactory {
     }
 
     @Bean
-    public SnowFlakeIdGenerator imMessageIdGenerator() {
+    public SnowFlakeIdGenerator snowFlakeIdGenerator() {
         return new SnowFlakeIdGenerator(dataCenterId, machineId);
     }
 }

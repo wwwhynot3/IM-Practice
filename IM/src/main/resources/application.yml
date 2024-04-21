@@ -5,8 +5,8 @@ server:
   servlet:
     encoding:
       force: true
-      charset: utf-8
-#      enabled: true
+      charset: UTF-8
+      enabled: true
 
 spring:
   mvc:
@@ -21,4 +21,4 @@ spring:
 
 logging:
   level:
-    web: debug
+    web: info
